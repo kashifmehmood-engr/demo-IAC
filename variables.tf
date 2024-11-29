@@ -9,13 +9,13 @@ variable "backend_iam_role" {
 }
 
 
-variable "region"{
-  type = string
+variable "region" {
+  type        = string
   description = "Define region"
-  default = "ap-southeast-1"
+  default     = "ap-southeast-1"
 }
 
-variable "eks_cluster_name"{
-  type = string
+variable "eks_cluster_name" {
+  type        = string
   description = "Define region"
 }
