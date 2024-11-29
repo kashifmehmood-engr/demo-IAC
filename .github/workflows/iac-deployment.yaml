@@ -1,12 +1,14 @@
 name: IAC workflow
-
 on:
-  push:
-    branches:
-      - main  
-  pull_request:
-    branches:
-      - main  
+  workflow_dispatch:
+    inputs:
+      tf_directory:
+        description: DynamoDB table for State lock
+        default: "terraform-backend-ddb"
+        type: string
+
+# concurrency required to avoid terraform lock contention during ECR provisioning
+concurrency: ci-${{ github.repository }}-terraform-pipeline
 
 jobs:
   terraform:
@@ -36,7 +38,7 @@ jobs:
       - name: terraform fmt
         uses: dflook/terraform-fmt-check@v1
         with:
-          path: "."
+          path: ${{ inputs.tf_directory }}
       - name: Wrong formatting found
         if: ${{ failure() && steps.fmt-check.outputs.failure-reason == 'check-failed' }}
         run: echo "formatting check failed"
@@ -58,14 +60,14 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init -upgrade -reconfigure 
-        working-directory: "."
+        working-directory: ${{ inputs.tf_directory }}
 
       - name: Terraform plan
         run: |
           terraform plan -var-file="terraform.tfvars"
-        working-directory: "."
+        working-directory: ${{ inputs.tf_directory }}
 
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve  -var-file="terraform.tfvars"
-        working-directory: "."
+        working-directory: ${{ inputs.tf_directory }}
