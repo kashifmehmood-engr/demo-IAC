@@ -28,6 +28,39 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ secrets.GH_IAM_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+  
+      - name: terraform fmt
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: "."
+      - name: Wrong formatting found
+        if: ${{ failure() && steps.fmt-check.outputs.failure-reason == 'check-failed' }}
+        run: echo "formatting check failed"
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        continue-on-error: true
+        with:
+          # This will add both a CLI output to the console and create a results.sarif file
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+        
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
       - name: Terraform Init
         run: |
           terraform init -upgrade -reconfigure 
