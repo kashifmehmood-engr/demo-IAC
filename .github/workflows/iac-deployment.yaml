@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
     inputs:
       tf_directory:
-        description: DynamoDB table for State lock
-        default: "terraform-backend-ddb"
+        description: input directory which contains tf code
+        default: "."
         type: string
 
 # concurrency required to avoid terraform lock contention during ECR provisioning
